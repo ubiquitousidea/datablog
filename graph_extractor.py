@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image
 import matplotlib.colors as mcolors
+from datetime import datetime, timedelta
 
 def detect_plot_bbox(img_arr):
     """
@@ -69,9 +70,9 @@ def detect_plot_bbox(img_arr):
                 
     return (left_x, top_y, right_x, bottom_y)
 
-def extract_points_from_graph(image_path, x_limits, y_limits, color="blue", plot_bbox=None):
+def extract_points_from_graph(image_path, x_limits, y_limits, color="blue", plot_bbox=None, date_limits=None):
     """
-    Extracts x, y points from a graph image.
+    Extracts x, y points from a graph image, optionally assigning a timestamp.
     
     Parameters:
     -----------
@@ -86,11 +87,14 @@ def extract_points_from_graph(image_path, x_limits, y_limits, color="blue", plot
     plot_bbox : tuple of (int, int, int, int), optional
         Pixel bounding box of the plot area: (left, top, right, bottom).
         If None, the function automatically detects the plot region.
+    date_limits : tuple of (str, str), optional
+        Start and end dates corresponding to the x_limits (e.g., ('2025-08-01', '2026-07-01')).
+        If provided, a third element (timestamp) is added to each returned point tuple.
         
     Returns:
     --------
-    list of tuple of (float, float)
-        List of (x, y) data points.
+    list of tuple
+        List of (x, y) or (x, y, timestamp) data points.
     """
     # 1. Load image and convert to RGB numpy array
     img = Image.open(image_path).convert("RGB")
@@ -127,6 +131,34 @@ def extract_points_from_graph(image_path, x_limits, y_limits, color="blue", plot
     else:
         left_x, top_y, right_x, bottom_y = plot_bbox
         
+    # Parse date limits if provided
+    dmin, dmax, delta_seconds = None, None, None
+    if date_limits is not None:
+        dmin_str, dmax_str = date_limits
+        # Try various standard formats
+        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+            try:
+                if dmin is None:
+                    dmin = datetime.strptime(dmin_str, fmt)
+            except ValueError:
+                pass
+            try:
+                if dmax is None:
+                    dmax = datetime.strptime(dmax_str, fmt)
+            except ValueError:
+                pass
+        
+        if dmin is None or dmax is None:
+            try:
+                if dmin is None:
+                    dmin = datetime.fromisoformat(dmin_str)
+                if dmax is None:
+                    dmax = datetime.fromisoformat(dmax_str)
+            except Exception as e:
+                raise ValueError(f"Could not parse date limits: {e}")
+                
+        delta_seconds = (dmax - dmin).total_seconds()
+
     extracted_points = []
     
     # Define a color distance threshold
@@ -158,7 +190,13 @@ def extract_points_from_graph(image_path, x_limits, y_limits, color="blue", plot
             y_frac = (bottom_y - y_pixel) / (bottom_y - top_y)
             y_data = y_limits[0] + y_frac * (y_limits[1] - y_limits[0])
             
-            extracted_points.append((x_data, y_data))
+            if date_limits is not None:
+                frac = (x_data - x_limits[0]) / (x_limits[1] - x_limits[0])
+                pt_date = dmin + timedelta(seconds=frac * delta_seconds)
+                timestamp_str = pt_date.strftime("%Y-%m-%d %H:%M:%S")
+                extracted_points.append((x_data, y_data, timestamp_str))
+            else:
+                extracted_points.append((x_data, y_data))
             
     return extracted_points
 
@@ -177,6 +215,8 @@ if __name__ == "__main__":
     parser.add_argument("--plot-bbox", type=int, nargs=4, metavar=("LEFT", "TOP", "RIGHT", "BOTTOM"),
                         help="Optional pixel bounding box of the plot area: left top right bottom.")
     parser.add_argument("--verify", help="Optional path to save a visual verification overlay image.")
+    parser.add_argument("--date-limits", nargs=2, metavar=("START_DATE", "END_DATE"),
+                        help="Optional start and end dates matching the --x-limits (e.g. 2025-08-01 2026-07-01)")
     
     args = parser.parse_args()
     
@@ -195,13 +235,17 @@ if __name__ == "__main__":
             x_limits=args.x_limits,
             y_limits=args.y_limits,
             color=color_arg,
-            plot_bbox=args.plot_bbox
+            plot_bbox=args.plot_bbox,
+            date_limits=args.date_limits
         )
         print(f"Extracted {len(pts)} data points.")
         
         # Save to CSV
         import pandas as pd
-        df = pd.DataFrame(pts, columns=["x_data", "y_data"])
+        if args.date_limits is not None:
+            df = pd.DataFrame(pts, columns=["x_data", "y_data", "timestamp"])
+        else:
+            df = pd.DataFrame(pts, columns=["x_data", "y_data"])
         df.to_csv(args.output, index=False)
         print(f"Saved extracted data to {args.output}")
         
@@ -220,7 +264,8 @@ if __name__ == "__main__":
                 
             # Map data points back to pixel coordinates
             pixel_points = []
-            for x_d, y_d in pts:
+            for pt in pts:
+                x_d, y_d = pt[0], pt[1]
                 # Convert x_data to x_pixel
                 x_frac = (x_d - args.x_limits[0]) / (args.x_limits[1] - args.x_limits[0])
                 x_pix = left + x_frac * (right - left)

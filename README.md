@@ -34,11 +34,11 @@ Below is a catalog of the Python files in this repository and their respective r
   
   **CLI Usage**:
   ```bash
-  # Extract Beef price data
-  poetry run python graph_extractor.py beef_com.png --x-limits 0 11 --y-limits 290 370 --color blue --output beef_extracted.csv --verify beef_verification.png
+  # Extract Beef price data (with timestamps)
+  poetry run python graph_extractor.py beef_com.png --x-limits 0 11 --y-limits 290 370 --color blue --output beef_extracted.csv --date-limits 2025-08-01 2026-07-01 --verify beef_verification.png
 
-  # Extract Crude Oil price data
-  poetry run python graph_extractor.py cl1_com.png --x-limits 0 11 --y-limits 50 130 --color blue --output cl1_extracted.csv --verify cl1_verification.png
+  # Extract Crude Oil price data (with timestamps)
+  poetry run python graph_extractor.py cl1_com.png --x-limits 0 11 --y-limits 50 130 --color blue --output cl1_extracted.csv --date-limits 2025-08-01 2026-07-01 --verify cl1_verification.png
   ```
   
 * **[001_slope.py](001_slope.py)**  
@@ -56,6 +56,9 @@ Below is a catalog of the Python files in this repository and their respective r
 
 * **[test_graph_extractor.py](test_graph_extractor.py)**  
   Verification runner for the image extractor. It extracts $(x, y)$ points from `beef_com.png`, writes them to `extracted_data.csv`, and outputs an overlay verification plot (`verification_plot.png`).
+
+* **[commodity_prices/run_batch_extraction.py](commodity_prices/run_batch_extraction.py)**  
+  Automates the extraction of historical time-series datasets from all 18 commodity price graphs in the `commodity_prices/` directory. It uses visual scale bounding boxes and generates individual CSVs as well as a consolidated `all_commodity_prices.csv` dataset.
 
 * **[003_test_slope.py](003_test_slope.py)**  
   Applies the derivative estimators from `001_slope.py` to the simulated bouncing ball data, plots the results comparing their noise levels, and saves `003_slope_comparison.png`.
