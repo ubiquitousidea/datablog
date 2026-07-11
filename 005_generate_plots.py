@@ -92,8 +92,8 @@ def main():
     print(f"Saved quadratic regression plot to {plot2_path}")
 
     # Copy files to artifacts directory so they can be embedded/viewed
-    artifact_dir = '/Users/dsnyder/.gemini/antigravity/brain/2e99ae12-7934-4916-bb38-00adec9ec3d8'
-    if os.path.exists(artifact_dir):
+    artifact_dir = os.environ.get('ANTIGRAVITY_ARTIFACT_DIR', '')
+    if artifact_dir and os.path.exists(artifact_dir):
         shutil.copy(plot1_path, os.path.join(artifact_dir, '005_linear_fit.png'))
         shutil.copy(plot2_path, os.path.join(artifact_dir, '005_quadratic_fit.png'))
         print("Copied plots to artifacts directory.")

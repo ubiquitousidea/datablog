@@ -217,8 +217,8 @@ if __name__ == '__main__':
     create_3d_projection_plot()
     
     # Copy files to artifacts directory
-    artifact_dir = '/Users/dsnyder/.gemini/antigravity/brain/2e99ae12-7934-4916-bb38-00adec9ec3d8'
-    if os.path.exists(artifact_dir):
+    artifact_dir = os.environ.get('ANTIGRAVITY_ARTIFACT_DIR', '')
+    if artifact_dir and os.path.exists(artifact_dir):
         shutil.copy('006_projection_2d.png', os.path.join(artifact_dir, '006_projection_2d.png'))
         shutil.copy('006_projection_3d.png', os.path.join(artifact_dir, '006_projection_3d.png'))
         print("Copied projection plots to artifacts directory.")

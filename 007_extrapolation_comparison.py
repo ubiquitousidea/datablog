@@ -125,8 +125,8 @@ def main():
     print(f"Saved fourier extrapolation plot to {fourier_path}")
 
     # Copy files to artifacts directory
-    artifact_dir = '/Users/dsnyder/.gemini/antigravity/brain/2e99ae12-7934-4916-bb38-00adec9ec3d8'
-    if os.path.exists(artifact_dir):
+    artifact_dir = os.environ.get('ANTIGRAVITY_ARTIFACT_DIR', '')
+    if artifact_dir and os.path.exists(artifact_dir):
         shutil.copy(poly_path, os.path.join(artifact_dir, '007_cubic_extrapolation.png'))
         shutil.copy(fourier_path, os.path.join(artifact_dir, '007_fourier_extrapolation.png'))
         print("Copied plots to artifacts directory.")
