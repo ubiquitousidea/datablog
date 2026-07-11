@@ -32,6 +32,15 @@ Below is a catalog of the Python files in this repository and their respective r
   - Target trace color matching using Euclidean color distance.
   - Isolation of the main line trace from shaded gradient fills (by selecting the topmost matching pixels).
   
+  **CLI Usage**:
+  ```bash
+  # Extract Beef price data
+  poetry run python graph_extractor.py beef_com.png --x-limits 0 11 --y-limits 290 370 --color blue --output beef_extracted.csv --verify beef_verification.png
+
+  # Extract Crude Oil price data
+  poetry run python graph_extractor.py cl1_com.png --x-limits 0 11 --y-limits 50 130 --color blue --output cl1_extracted.csv --verify cl1_verification.png
+  ```
+  
 * **[001_slope.py](001_slope.py)**  
   Implements the mathematical functions for three different derivative estimation strategies:
   1. *Type 1*: Simple finite differences divided by timestep.
